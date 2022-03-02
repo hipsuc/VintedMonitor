@@ -14,7 +14,7 @@ user_agent_rotator = UserAgent(software_names=software_names, operating_systems=
 
 class MonitorVinted:
 
-    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, seller_min_eval : str, seller_min_mark : str , proxies : str, webhook_link : str, delay : int) -> None:
+    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, seller_min_eval : str, seller_min_mark : str , proxies : str, webhook_link : str, delay : int, webhook_avatar : str, webhook_name : str) -> None:
         self.keyword = keyword
         if type(filter) is NAType: # Excepting csv blank values
             self.filter = ""
@@ -47,6 +47,8 @@ class MonitorVinted:
                     proxy = proxy_elements[2] + ":" + proxy_elements[3] + "@" + proxy_elements[0] + ":" + proxy_elements[1]
                     self.proxies.append({"http": "http://" + proxy, "https": "htpps://" + proxy})
         self.webhook_link = webhook_link
+        self.webhook_avatar = webhook_avatar
+        self.webhook_name = webhook_name
         self.delay = delay
         self._pairs_already_pinged = [{}]
 
@@ -68,8 +70,8 @@ class MonitorVinted:
         embed.add_embed_field(name="Price", value=f'{dict_shoe["price"]}')
         embed.add_embed_field(name="Size", value=f'{dict_shoe["size"]}')
         embed.set_url(dict_shoe["link"])
-        embed.set_footer(text="Pal's Vinted", icon_url="https://pbs.twimg.com/profile_images/1319740969059835907/6mOvjkfs_400x400.jpg")
-        webhook = DiscordWebhook(url=self.webhook_link, username="Pal's Vinted", avatar_url="https://pbs.twimg.com/profile_images/1319740969059835907/6mOvjkfs_400x400.jpg")
+        embed.set_footer(text=self.webhook_name, icon_url=self.webhook_avatar)
+        webhook = DiscordWebhook(url=self.webhook_link, username=self.webhook_name, avatar_url=self.webhook_avatar)
         webhook.add_embed(embed)
         try:
             resp = webhook.execute(remove_embeds=True, remove_files=True)
@@ -97,7 +99,7 @@ class MonitorVinted:
         else:
             return False
 
-    def __getProducts(self):
+    def __getProducts(self) -> list:
         list_products = []
         try:
             proxy = None
