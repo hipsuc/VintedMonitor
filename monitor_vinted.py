@@ -5,6 +5,7 @@ from discord_webhook import DiscordEmbed, DiscordWebhook
 from random_user_agent.user_agent import UserAgent
 from random_user_agent.params import SoftwareName, OperatingSystem
 from pandas._libs.missing import NAType
+from random import randint
 
 # Creating a pool of random user-agent
 software_names = [SoftwareName.CHROME.value]
@@ -13,7 +14,7 @@ user_agent_rotator = UserAgent(software_names=software_names, operating_systems=
 
 class MonitorVinted:
 
-    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, seller_min_eval : str, seller_min_mark : str , webhook_link : str, delay : int) -> None:
+    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, seller_min_eval : str, seller_min_mark : str , proxies : str, webhook_link : str, delay : int) -> None:
         self.keyword = keyword
         if type(filter) is NAType: # Excepting csv blank values
             self.filter = ""
@@ -36,6 +37,15 @@ class MonitorVinted:
             self.seller_min_mark = None
         else: 
             self.seller_min_mark = float(seller_min_mark)
+        if type(proxies) is NAType:
+            self.proxies = None
+        else:
+            self.proxies = []
+            with open(f"proxies\\{proxies}.txt", "r", encoding="utf-8") as proxy_file:
+                for line in proxy_file:
+                    proxy_elements = line.split(":")
+                    proxy = proxy_elements[2] + ":" + proxy_elements[3] + "@" + proxy_elements[0] + ":" + proxy_elements[1]
+                    self.proxies.append({"http": "http://" + proxy, "https": "htpps://" + proxy})
         self.webhook_link = webhook_link
         self.delay = delay
         self._pairs_already_pinged = [{}]
@@ -71,9 +81,8 @@ class MonitorVinted:
             print(f'Error sending webhook ! {e}')
             return False, None
 
-    def __userReputation(self, user_id : int, session : requests.Session, user_agent : dict) -> bool:
-        link_feedback = f"https://www.vinted.fr/api/v2/users/{str(user_id)}?localize=false"
-        get = session.get(link_feedback, headers=user_agent)
+    def __userReputation(self, user_id : int, session : requests.Session, user_agent : dict, proxy : dict) -> bool:
+        get = session.get(f"https://www.vinted.fr/api/v2/users/{str(user_id)}?localize=false", headers=user_agent, proxies=proxy)
         if get.ok:
             json_resp = json.loads(get.text)
             if (self.seller_min_eval != None) and (self.seller_min_mark):
@@ -91,9 +100,12 @@ class MonitorVinted:
     def __getProducts(self):
         list_products = []
         try:
+            proxy = None
+            if self.proxies != None:
+                proxy = self.proxies[randint(0, len(self.proxies) - 1)]
             user_agent = {"user-agent": user_agent_rotator.get_random_user_agent()} 
             with requests.Session() as s:
-                fetch = s.get("https://www.vinted.fr/", headers=user_agent)
+                fetch = s.get("https://www.vinted.fr/", headers=user_agent, proxies=proxy)
                 if fetch.ok:
                     params_search = {
                         "search_text": self.keyword.replace(" ", "+"),
@@ -109,30 +121,27 @@ class MonitorVinted:
                         params_search["price_to"] = self.price_max
                         params_search["currency"] = "EUR" 
 
-                    search = s.get("https://www.vinted.fr/api/v2/catalog/items", params=params_search, headers=user_agent)
+                    search = s.get("https://www.vinted.fr/api/v2/catalog/items", params=params_search, headers=user_agent, proxies=proxy)
                     if search.ok:
                         json_resp = json.loads(search.text)
-                        if json_resp["items"] != []:
-                            for item in json_resp["items"]:
-                                if self.filter in item["title"]:
-                                    if (self.seller_min_mark != None) or (self.seller_min_mark != None):
-                                        if self.__userReputation(item["user"]["id"], s, user_agent):
-                                            list_products.append({
-                                                "title": item["title"],
-                                                "link": item["url"],
-                                                "price": str(item["price"]) + "€",
-                                                "image": item["photo"]["url"],
-                                                "size": item["size_title"]
-                                            })
-                                    else:
-                                        list_products.append({
-                                                "title": item["title"],
-                                                "link": item["url"],
-                                                "price": str(item["price"]) + "€",
-                                                "image": item["photo"]["url"],
-                                                "size": item["size_title"]
-                                            })
-
+                        for item in json_resp["items"]:
+                            if (self.seller_min_mark != None) or (self.seller_min_mark != None) and (self.filter in item["title"]):
+                                if self.__userReputation(item["user"]["id"], s, user_agent, proxy):
+                                    list_products.append({
+                                        "title": item["title"],
+                                        "link": item["url"],
+                                        "price": str(item["price"]) + "€",
+                                        "image": item["photo"]["url"],
+                                        "size": item["size_title"]
+                                    })
+                                else:
+                                    list_products.append({
+                                            "title": item["title"],
+                                            "link": item["url"],
+                                            "price": str(item["price"]) + "€",
+                                            "image": item["photo"]["url"],
+                                            "size": item["size_title"]
+                                        })
                 else:
                     print("Error fetching Vinted" + str(fetch))
         except Exception as e:

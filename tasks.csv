@@ -1,4 +1,4 @@
-keyword,filter,rpp,min_price,max_price,min_seller_eval,min_seller_mark
-new balance 550,550,10,100,150,4,0.8
-dunk low,dunk,10,,,4,0.8
-dunk high,dunk,10,100,150,,
+keyword,filter,rpp,min_price,max_price,min_seller_eval,min_seller_mark,proxies
+new balance 550,550,10,100,150,4,0.8,
+dunk low,dunk,10,,,4,0.8,
+dunk high,dunk,10,100,150,,,proxies
