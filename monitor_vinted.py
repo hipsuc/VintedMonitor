@@ -45,7 +45,7 @@ class MonitorVinted:
                 for line in proxy_file:
                     proxy_elements = line.split(":")
                     proxy = proxy_elements[2] + ":" + proxy_elements[3] + "@" + proxy_elements[0] + ":" + proxy_elements[1]
-                    self.proxies.append({"http": "http://" + proxy, "https": "htTps://" + proxy})
+                    self.proxies.append({"http": "http://" + proxy, "https": "https://" + proxy})
         self.webhook_link = webhook_link
         self.webhook_avatar = webhook_avatar
         self.webhook_name = webhook_name
