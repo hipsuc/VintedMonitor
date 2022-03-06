@@ -14,7 +14,7 @@ user_agent_rotator = UserAgent(software_names=software_names, operating_systems=
 
 class MonitorVinted:
 
-    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, seller_min_eval : str, seller_min_mark : str , proxies : str, webhook_link : str, delay : int, webhook_avatar : str, webhook_name : str) -> None:
+    def __init__(self, keyword : str, filter : str, rpp : str, price_min : str, price_max : str, sizes : str, seller_min_eval : str, seller_min_mark : str , proxies : str, specific_webhook : str, webhook_link : str, delay : int, webhook_avatar : str, webhook_name : str) -> None:
         self.keyword = keyword
         if type(filter) is NAType: # Excepting csv blank values
             self.filter = ""
@@ -29,6 +29,10 @@ class MonitorVinted:
             self.price_max = None
         else: 
             self.price_max = price_max
+        if type (sizes) is NAType:
+            self.sizes = [""]
+        else:
+            self.sizes = sizes.split(";")
         if type(seller_min_eval) is NAType:
             self.seller_min_eval = None
         else: 
@@ -46,7 +50,10 @@ class MonitorVinted:
                     proxy_elements = line.split(":")
                     proxy = proxy_elements[2] + ":" + proxy_elements[3] + "@" + proxy_elements[0] + ":" + proxy_elements[1]
                     self.proxies.append({"http": "http://" + proxy, "https": "https://" + proxy})
-        self.webhook_link = webhook_link
+        if type(specific_webhook) is NAType:
+            self.webhook_link = webhook_link
+        else:
+            self.webhook_link = specific_webhook
         self.webhook_avatar = webhook_avatar
         self.webhook_name = webhook_name
         self.delay = delay
@@ -127,7 +134,7 @@ class MonitorVinted:
                     if search.ok:
                         json_resp = json.loads(search.text)
                         for item in json_resp["items"]:
-                            if (self.seller_min_mark != None) or (self.seller_min_mark != None) and (self.filter in item["title"]):
+                            if (self.seller_min_mark != None) or (self.seller_min_mark != None) and (self.filter in item["title"]) and (item["size_title"] in self.sizes):
                                 if self.__userReputation(item["user"]["id"], s, user_agent, proxy):
                                     list_products.append({
                                         "title": item["title"],
@@ -136,7 +143,7 @@ class MonitorVinted:
                                         "image": item["photo"]["url"],
                                         "size": item["size_title"]
                                     })
-                            elif self.filter in item["title"]:
+                            elif (self.filter in item["title"]) and (item["size_title"] in self.sizes):
                                 list_products.append({
                                         "title": item["title"],
                                         "link": item["url"],

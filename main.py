@@ -16,8 +16,8 @@ def main() -> None:
         delay = config["delay"]
     df = pd.read_csv("tasks.csv", dtype="string")
     for i in range(len(df)):
-        print(df.iloc[i]["proxies"])
-        monitors.append(MonitorVinted(df.iloc[i]["keyword"], df.iloc[i]["filter"], df.iloc[i]["rpp"], df.iloc[i]["min_price"], df.iloc[i]["max_price"], df.iloc[i]["min_seller_eval"], df.iloc[i]["min_seller_mark"], df.iloc[i]["proxies"], webhook_link, delay, webhook_avatar, webhook_name))
+
+        monitors.append(MonitorVinted(df.iloc[i]["keyword"], df.iloc[i]["filter"], df.iloc[i]["rpp"], df.iloc[i]["min_price"], df.iloc[i]["max_price"], df.iloc[i]["sizes"], df.iloc[i]["min_seller_eval"], df.iloc[i]["min_seller_mark"], df.iloc[i]["proxies"], df.iloc[i]["webhook"], webhook_link, delay, webhook_avatar, webhook_name))
     for monitor in monitors:
         t = Thread(target=monitor.monitor, args=())
         t.start()
